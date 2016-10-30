@@ -16,14 +16,14 @@ lazy val TwitterAnalytics = project.in(file("."))
   .settings(
     name := "TwitterAnalytics"
   )
-  .aggregate(consumer, ml_model, analyzer)
+  .aggregate(utils, consumer, ml_model, analyzer)
 
 lazy val utils = project.in(file("lib/utils"))
   .settings(commonSettings: _*)
   .settings(
-    name := "TwitterAnalytics-utils"
+    name := "TwitterAnalytics-utils",
+    libraryDependencies := utilsDependencies
   )
-
 
 lazy val consumer = project.in(file("consumer"))
   .settings(commonSettings: _*)
