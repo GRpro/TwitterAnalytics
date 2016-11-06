@@ -1,12 +1,13 @@
 import sbt.Keys._
 import dependencies._
 
+javacOptions ++= Seq("-encoding", "UTF-8")
 
 val buildVersion = "1.0"
 
 val commonSettings = Seq(
   organization := "kpi.twitter.analysis",
-  version := s"$buildVersion-${Process("git rev-parse HEAD").lines.head}",
+  version := s"$buildVersion-${Process("git rev-parse HEAD").lines.head.take(5)}",
   scalaVersion := "2.11.8"
 )
 
@@ -31,6 +32,7 @@ lazy val consumer = project.in(file("consumer"))
     name := "TwitterAnalytics-consumer",
     libraryDependencies := consumerDependencies
   )
+  .enablePlugins(AssemblyPlugin)
   .dependsOn(utils)
 
 lazy val ml_model = project.in(file("ml_model"))
@@ -48,4 +50,7 @@ lazy val analyzer = project.in(file("analyzer"))
   .dependsOn(utils)
 
 
-
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs@_*) => MergeStrategy.discard
+  case x => (assemblyMergeStrategy in assembly).value(x)
+}

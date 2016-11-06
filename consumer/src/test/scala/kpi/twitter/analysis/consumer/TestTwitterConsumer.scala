@@ -1,6 +1,6 @@
 package kpi.twitter.analysis.consumer
 
-import kpi.twitter.analysis.cosumer.TwitterConsumer
+import kpi.twitter.analysis.consumer.TwitterConsumer
 import org.apache.spark.sql.SparkSession
 import org.scalatest.FunSuite
 

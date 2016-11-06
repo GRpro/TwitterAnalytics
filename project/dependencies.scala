@@ -20,13 +20,12 @@ object dependencies {
     // provided
     "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
-    "org.apache.spark" %% "spark-streaming-twitter" % "1.6.2",
+    ("org.apache.spark" %% "spark-streaming-twitter" % "1.6.2" ) exclude ("org.spark-project.spark", "unused"),
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
     // test
     "org.apache.spark" %% "spark-core" % sparkVersion % "test",
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "test",
-    "org.apache.spark" %% "spark-streaming-twitter" % "1.6.2",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test",
     "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
     "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
