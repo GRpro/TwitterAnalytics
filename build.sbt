@@ -1,15 +1,37 @@
 import sbt.Keys._
 import dependencies._
+import sbtassembly.AssemblyPlugin.autoImport._
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
-val buildVersion = "1.0"
+val buildInfoSettings = Seq(
+  sourceGenerators in Compile <+= (sourceManaged in Compile, version, name) map { (d, v, n) =>
+    val file = d / "info.scala"
+    IO.write(file, """package kpi.twitter.analysis
+                     |class BuildInfo {
+                     |  val info = Map[String, String](
+                     |    "name" -> "%s",
+                     |    "version" -> "%s"
+                     |    )
+                     |}
+                     |""".stripMargin.format(n, v))
+    Seq(file)
+  }
+)
 
 val commonSettings = Seq(
   organization := "kpi.twitter.analysis",
-  version := s"$buildVersion-${Process("git rev-parse HEAD").lines.head.take(5)}",
-  scalaVersion := "2.11.8"
+  version := s"${Process("git describe --tags").lines.head}",
+  scalaVersion := "2.11.8",
+  assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", xs@_*) => MergeStrategy.discard
+    case x => (assemblyMergeStrategy in assembly).value(x)
+  }
 )
+
+/*
+ * Project definitions
+ */
 
 // root
 lazy val TwitterAnalytics = project.in(file("."))
@@ -28,6 +50,7 @@ lazy val utils = project.in(file("lib/utils"))
 
 lazy val consumer = project.in(file("consumer"))
   .settings(commonSettings: _*)
+  .settings(buildInfoSettings: _*)
   .settings(
     name := "TwitterAnalytics-consumer",
     libraryDependencies := consumerDependencies
@@ -37,6 +60,7 @@ lazy val consumer = project.in(file("consumer"))
 
 lazy val ml_model = project.in(file("ml_model"))
   .settings(commonSettings: _*)
+  .settings(buildInfoSettings: _*)
   .settings(
     name := "TwitterAnalytics-ml_model"
   )
@@ -44,13 +68,14 @@ lazy val ml_model = project.in(file("ml_model"))
 
 lazy val analyzer = project.in(file("analyzer"))
   .settings(commonSettings: _*)
+  .settings(buildInfoSettings: _*)
   .settings(
     name := "TwitterAnalytics-analyzer"
   )
   .dependsOn(utils)
 
 
-assemblyMergeStrategy in assembly := {
-  case PathList("META-INF", xs@_*) => MergeStrategy.discard
-  case x => (assemblyMergeStrategy in assembly).value(x)
-}
+
+
+
+
