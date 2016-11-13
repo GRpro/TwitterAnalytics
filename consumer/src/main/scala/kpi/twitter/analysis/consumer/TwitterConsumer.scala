@@ -24,11 +24,13 @@ object TwitterConsumer {
 
     log.info("Version " + version)
 
-    runJob(sparkSession)
+    val streamingContext = runJob(sparkSession)
 
+    streamingContext.start()
+    streamingContext.awaitTermination()
   }
 
-  def runJob(sparkSession: SparkSession) = {
+  def runJob(sparkSession: SparkSession): StreamingContext = {
     val config = getOptions()
     val streamingContext = new StreamingContext(sparkSession.sparkContext,
       Seconds(config.getInt(batchDurationMs)))
@@ -53,20 +55,6 @@ object TwitterConsumer {
       sparkSession.sparkContext.broadcast(Producer[String, String](kafkaProducerConfig))
     }
 
-//    tweetStream.foreachRDD { (rdd, time) => {
-//      val count = rdd.count()
-//      if (count > 0) {
-////        log.info(new Gson().toJson(rdd))
-////        println("RDD: " + rdd)
-////        println("JSON EDD: " + rdd)
-//        rdd.collect().foreach(println)
-//      } else {
-//
-////        println("Empty " + rdd)
-//      }
-//    }
-//    }
-
     val topic = config.getString(kafkaTopic)
 
     log.info("Start processing")
@@ -80,8 +68,7 @@ object TwitterConsumer {
       }
     }
 
-    streamingContext.start()
-    streamingContext.awaitTermination()
+    streamingContext
   }
 
   def filters(csString: String): Seq[String] = {
