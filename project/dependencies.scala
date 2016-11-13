@@ -10,24 +10,26 @@ object dependencies {
   val coreNlpVersion = "3.6.0"
   val scalaTestVersion = "3.0.0"
 
-//  val commonDependencies = Seq("com.typesafe" % "config" % configVersion)
-
   val utilsDependencies = Seq(
-    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided"
+    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+    "com.typesafe" % "config" % configVersion
   )
 
   val consumerDependencies = Seq(
     // provided
-    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
+//    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
-    ("org.apache.spark" %% "spark-streaming-twitter" % "1.6.2" ) exclude ("org.spark-project.spark", "unused"),
+//    ("org.apache.spark" %% "spark-streaming-twitter" % sparkVersion ) exclude ("org.spark-project.spark", "unused"),
+    ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
-    "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
+    ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
+//    "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
+    "com.google.code.gson" % "gson" % "2.8.0",
     // test
     "org.apache.spark" %% "spark-core" % sparkVersion % "test",
-    "org.apache.spark" %% "spark-streaming" % sparkVersion % "test",
+    "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion % "test",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test",
-    "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
+//    "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
     "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
   )
 

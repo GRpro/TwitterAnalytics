@@ -27,12 +27,12 @@ else
     echo "Found spark master container $SPARK_MASTER_CONTAINER"
 fi
 
-DEST_PATH=/root/${CONSUMER_JAR##*/}
+JAR_PATH=/root/${CONSUMER_JAR##*/}
 
-docker cp $CONSUMER_JAR $SPARK_MASTER_CONTAINER:$DEST_PATH
+docker cp $CONSUMER_JAR $SPARK_MASTER_CONTAINER:$JAR_PATH
 
 # submit application
 docker exec $SPARK_MASTER_CONTAINER bash -x -c "\$SPARK_HOME/bin/spark-submit \
   --class kpi.twitter.analysis.consumer.TwitterConsumer \
   --master spark://spark-master:7077 \
-  $DEST_PATH"
+  $JAR_PATH"
