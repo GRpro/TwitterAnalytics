@@ -1,7 +1,8 @@
 package kpi.twitter.analysis.consumer.unit
 
 import kpi.twitter.analysis.consumer.TwitterConsumer
-import org.scalatest.FunSuite
+
+import org.scalatest._
 
 class TwitterConsumerTest extends FunSuite {
 
@@ -19,5 +20,9 @@ class TwitterConsumerTest extends FunSuite {
 
   test("filter should ignore empty values") {
     assert(Seq("#tag1", "#tag2") === TwitterConsumer.filters("#tag1,#tag2, , ,,"))
+  }
+
+  test("job pipeline should invoke send") {
+    // to be soon
   }
 }
