@@ -30,7 +30,8 @@ object dependencies {
     "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion % "test",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test",
 //    "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
-    "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
+    "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
   )
 
 
