@@ -9,6 +9,7 @@ object dependencies {
   val jacksonVersion = "2.8.1"
   val coreNlpVersion = "3.6.0"
   val scalaTestVersion = "3.0.0"
+  val kafkaVersion = "0.10.1.0"
 
   val utilsDependencies = Seq(
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
@@ -41,4 +42,8 @@ object dependencies {
 //    "edu.stanford.nlp" % "stanford-corenlp" % coreNlpVersion classifier "models",
 //    "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
 //  )
+
+  val webappDependencies = Seq(
+    "org.apache.kafka" % "kafka-clients" % kafkaVersion
+  )
 }

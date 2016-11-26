@@ -39,7 +39,7 @@ lazy val TwitterAnalytics = project.in(file("."))
   .settings(
     name := "TwitterAnalytics"
   )
-  .aggregate(utils, consumer, ml_model, analyzer)
+  .aggregate(utils, consumer, ml_model, analyzer, webapp)
 
 lazy val utils = project.in(file("lib/utils"))
   .settings(commonSettings: _*)
@@ -74,7 +74,15 @@ lazy val analyzer = project.in(file("analyzer"))
   )
   .dependsOn(utils)
 
-
+lazy val webapp = project.in(file("webapp"))
+  .enablePlugins(PlayScala)
+  .settings(commonSettings: _*)
+  .settings(buildInfoSettings: _*)
+  .settings(
+    name := "TwitterAnalytics-webapp",
+    libraryDependencies ++= webappDependencies
+  )
+  .dependsOn(utils)
 
 
 
