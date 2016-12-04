@@ -15,11 +15,11 @@ class TwitterConsumerIntegrationTest extends FunSuite {
 
   // to be soon
   test("test no errors") {
-    new Config {
+//    new Config {
       //val job: StreamingContext = TwitterConsumer.jobPipeline(ArrasparkSession)
       //job.start()
       //job.awaitTermination()
-    }
+//    }
   }
 
 }

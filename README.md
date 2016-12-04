@@ -15,11 +15,13 @@ Setup environment
 
 1. Install [docker](https://docs.docker.com/engine/installation/)
 2. Install [docker-compose](https://docs.docker.com/compose/install/)
-3. Execute `./spark_cluster/start.sh`. The script builds base docker image
-   and starts 2 containers: spark-master and spark-worker.
-4. Download and unpack Apache Kafka distribution following this [link](http://apache.volia.net/kafka/0.10.1.0/kafka_2.11-0.10.1.0.tgz).
-   Start zookeeper `cd ./kafka_2.11-0.10.1.0/bin` `./zookeeper-server-start.sh ../config/zookeeper.properties`. 
-   From another terminal start kafka broker `cd ./kafka_2.11-0.10.1.0/bin` `./kafka-server-start.sh ../config/server.properties`
+3. Build docker images `./deploy/build-images.sh`. 
+   This requires about 20 minutes on my environment.
+4. Run HDFS, Spark and Kafka within docker containers that were built 
+   in step 3 by executing `cd deploy && docker-compose up -d`
+   
+For more details how to manage running docker containers 
+refer to [project deployment](deploy/README.md) section
 
 Build project and run
 ---------------------
@@ -31,8 +33,8 @@ Build project and run
       - twitter.accessToken="xxx"
       - twitter.accessTokenSecret="xxx"
 2. Enter sbt shell at the project root directory. Run `clean` and then `assembly` to build jars for Spark job
-3. Create Kafka topic `./kafka-topics.sh --create --topic tweets-1 --partitions 3 --replication-factor 1 --zookeeper localhost:2181`
-4. Start from another terminal console consumer `./kafka-console-consumer.sh --topic tweets-1 --new-consumer --bootstrap-server localhost:9092`
-5. Submit consumer job `./consumer/submit.sh`
-6. Navigate to Spark UI on `localhost:8080` to see job running
-7. See incoming tweets from console consumer
+3. Submit consumer job `./consumer/submit.sh`
+4. Navigate to Spark UI on `localhost:8080` to see job running
+5. Attach to kafka-zookeeper container `docker exec -it deploy_kafka-zookeeper_1 /bin/bash` 
+   (See [project deployment](deploy/README.md) for more details) and start console 
+   consumer to see incoming tweets `${KAFKA_HOME}/kafka-console-consumer.sh --topic unclassified-tweets --new-consumer --bootstrap-server localhost:9092`

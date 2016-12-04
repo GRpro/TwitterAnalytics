@@ -34,5 +34,5 @@ docker cp $CONSUMER_JAR $SPARK_MASTER_CONTAINER:$JAR_PATH
 # submit application
 docker exec $SPARK_MASTER_CONTAINER bash -x -c "\$SPARK_HOME/bin/spark-submit \
   --class kpi.twitter.analysis.consumer.TwitterConsumer \
-  --master spark://spark-master:7077 \
+  --master spark://spark-master-host:7077 \
   $JAR_PATH"
