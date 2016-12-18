@@ -44,6 +44,9 @@ object dependencies {
 //  )
 
   val webappDependencies = Seq(
-    "org.apache.kafka" % "kafka-clients" % kafkaVersion
+    "org.apache.kafka" % "kafka-clients" % kafkaVersion,
+    "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
+    "org.mockito" % "mockito-all" % "1.9.5" % "test",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
   )
 }
