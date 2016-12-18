@@ -3,34 +3,22 @@ package process
 import java.util.{Collections, Properties}
 
 import kpi.twitter.analysis.utils.DataSource
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.serialization.StringDeserializer
 
-sealed trait Sentiment
-
-case class Positive() extends Sentiment
-
-case class Neutral() extends Sentiment
-
-case class Negative() extends Sentiment
 
 
 /**
-  *
+  * Kafka consumer that reads records from a specific topic
   */
-class KafkaEventSource(val consumerProperties: Properties, val topic: String, val time: Time) extends DataSource[String] {
-  private val kafkaConsumer = {
-    val consumer = new KafkaConsumer[String, String](
-      consumerProperties,
-      new StringDeserializer,
-      new StringDeserializer)
-    consumer.subscribe(Collections.singletonList(topic))
-    consumer
-  }
+class KafkaEventSource(createConsumer: => Consumer[String, String], val topic: String, val time: Time) extends DataSource[String] {
+  private val kafkaConsumer = createConsumer
+
+  kafkaConsumer.subscribe(Collections.singletonList(topic))
 
   private var recordsIterator: Option[java.util.Iterator[ConsumerRecord[String, String]]] = None
 
-  override def poll(timeout: Long, maxRecords: Long): Option[Seq[String]] = {
+  override def poll(timeout: Long, maxRecords: Long):Seq[String] = {
     val endTime = time.currentMillis + timeout
     var readSize: Long = 0
 
@@ -52,11 +40,13 @@ class KafkaEventSource(val consumerProperties: Properties, val topic: String, va
         readSize += 1
       }
     }
-
-    if (result.isEmpty) {
-      None
-    } else {
-      Some(result)
-    }
+    result
   }
+}
+
+object KafkaEventSource {
+
+  def apply(consumerProperties: Properties, topic: String): KafkaEventSource =
+    new KafkaEventSource(createKafkaConsumer(consumerProperties), topic, Time.default)
+
 }

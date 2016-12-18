@@ -5,5 +5,5 @@ package kpi.twitter.analysis.utils
   * @tparam T type of incoming data
   */
 trait DataSource[T] {
-  def poll(timeout: Long, maxRecords: Long): Option[Seq[T]]
+  def poll(timeout: Long, maxRecords: Long): Seq[T]
 }
