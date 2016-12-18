@@ -1,4 +1,4 @@
-var source = new EventSource('/stream');
+var source = new EventSource('/tweets');
 
 var worldmap = new Datamap({
     scope: 'world',
