@@ -43,6 +43,12 @@ object dependencies {
 //    "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
 //  )
 
+  val toolsDependencies = Seq(
+    "org.apache.kafka" %% "kafka" % kafkaVersion,
+    "org.apache.commons" % "commons-io" % "1.3.2",
+    "org.apache.curator" % "curator-test" % "3.2.0"
+  )
+
   val webappDependencies = Seq(
     "org.apache.kafka" % "kafka-clients" % kafkaVersion,
     "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
