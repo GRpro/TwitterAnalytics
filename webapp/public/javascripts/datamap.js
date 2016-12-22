@@ -66,7 +66,7 @@ var func = function(geo, data) {
 
 source.onmessage = function(event) {
 
-    //console.log(event.data);
+    console.log(event.data);
     if (event.data !== "1") {
         data = event.data.split("¦");
         var bubble = {
