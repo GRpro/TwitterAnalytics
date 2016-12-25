@@ -2,82 +2,79 @@ package kpi.twitter.analysis.consumer
 
 import java.util.concurrent.Future
 
-import com.google.gson.Gson
+import com.typesafe.config.Config
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
-import kpi.twitter.analysis.utils._
-import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.twitter.TwitterUtils
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
+import org.apache.kafka.clients.producer.{KafkaProducer, RecordMetadata}
+import org.apache.kafka.common.serialization._
+import org.apache.spark.streaming.dstream.ReceiverInputDStream
+import twitter4j.Status
 
+import kpi.twitter.analysis.utils._
+
+/**
+  * Spark Job that reads from public Twitter stream and publishes
+  * retrieved tweets to Kafka for performing analytics
+  */
 object TwitterConsumer {
 
   private val log = Logger.getLogger(getClass)
 
   private val appName = buildInfo("name")
   private val version = buildInfo("version")
-  private val config = getOptions()
-
-  private val gson = new Gson()
+  private val config = getOptions("consumer.conf")
 
 
-
-  /* Entry point to Spark streaming application */
-  def main(args: Array[String]) {
-    val sparkSession = SparkSession.builder
-      .appName(s"$appName-$version")
-      .getOrCreate()
-
-    log.info("Version " + version)
-
-    val streamingContext =
-      new StreamingContext(
-        sparkSession.sparkContext, Milliseconds(config.getInt(batchDurationMs)))
-
+  def createTwitterStream(streamingContext: StreamingContext, config: Config): ReceiverInputDStream[Status] = {
     System.setProperty("twitter4j.oauth.consumerKey", config.getString(twitterConsumerKey))
     System.setProperty("twitter4j.oauth.consumerSecret", config.getString(twitterConsumerSecret))
     System.setProperty("twitter4j.oauth.accessToken", config.getString(twitterAccessToken))
     System.setProperty("twitter4j.oauth.accessTokenSecret", config.getString(twitterAccessTokenSecret))
 
-    val tweetStream = TwitterUtils
-      .createStream(streamingContext, None, filters(config.getString(hashTagsFilter)))
-      .map(gson.toJson(_))
-
-    val topic = config.getString(kafkaTopic)
-    import org.apache.kafka.common.serialization._
-
-    val kafkaProducer: Broadcast[Producer[String, String]] = {
-      val kafkaProducerConfig = {
-        val p = new java.util.Properties()
-        p.setProperty("bootstrap.servers", config.getString(kafkaBootstrapServers))
-        p.setProperty("key.serializer", classOf[StringSerializer].getName)
-        p.setProperty("value.serializer", classOf[StringSerializer].getName)
-        p
-      }
-      sparkSession.sparkContext.broadcast(Producer[String, String](kafkaProducerConfig))
-    }
-
-    log.info("Start processing")
-    jobPipeline(tweetStream, kafkaProducer.value, topic)
-
-    streamingContext.start()
-    streamingContext.awaitTermination()
+    TwitterUtils.createStream(streamingContext, None, filters(config.getString(hashTagsFilter)))
   }
 
-  def jobPipeline(tweetStream: DStream[String],
-                  kafkaProducer: Producer[String, String],
-                  topic: String) = {
+  def createKafkaProducer(config: Config): KafkaProducer[String, String] = {
+    val kafkaProducerConfig = {
+      val p = new java.util.Properties()
+      p.setProperty("bootstrap.servers", config.getString(kafkaBootstrapServers))
+      p.setProperty("key.serializer", classOf[StringSerializer].getName)
+      p.setProperty("value.serializer", classOf[StringSerializer].getName)
+      p
+    }
+    new KafkaProducer[String, String](kafkaProducerConfig)
+  }
+
+  def job(sparkSession: SparkSession, config: Config,
+          createTwitterStream: (StreamingContext, Config) => ReceiverInputDStream[Status] = createTwitterStream,
+          createKafkaProducer: (Config) => KafkaProducer[String, String] = createKafkaProducer): Unit = {
+
+    val streamingContext = new StreamingContext(sparkSession.sparkContext, Milliseconds(config.getInt(batchDurationMs)))
+
+    val tweetStream = createTwitterStream(streamingContext, config)
+
+    val kafkaProducer: Broadcast[Producer[String, String]] = sparkSession.sparkContext
+      .broadcast(Producer[String, String](createKafkaProducer(config)))
+
+    val allTweetsTopic = config.getString(kafkaTweetsAllTopic)
 
     tweetStream.foreachRDD { (rdd, time) =>
       rdd.foreachPartition { partitionOfRecords =>
-        val metadata: Stream[Future[RecordMetadata]] = partitionOfRecords.map { record =>
-          kafkaProducer.send(topic, gson.toJson(record))
+        val allTweetsMetadata: Stream[Future[RecordMetadata]] = partitionOfRecords.map { status =>
+          // produce to topic with all tweets
+          kafkaProducer.value.send(allTweetsTopic, TweetSerDe.toString(status))
         }.toStream
-        metadata.foreach { metadata => metadata.get() }
+        allTweetsMetadata.foreach { metadata => metadata.get() }
       }
     }
+
+    log.info("Start processing")
+
+    streamingContext.start()
+    streamingContext.awaitTermination()
   }
 
   def filters(csString: String): Seq[String] = {
@@ -86,4 +83,16 @@ object TwitterConsumer {
       csString.replaceAll("^[,\\s]+", "").split("[,\\s]+").toSeq
     }
   }
+
+  def main(args: Array[String]) {
+    log.info(s"Version: $version")
+    log.info(s"Configuration: $config")
+
+    val sparkSession = SparkSession.builder
+      .appName(s"$appName-$version")
+      .getOrCreate()
+
+    job(sparkSession, config)
+  }
+
 }

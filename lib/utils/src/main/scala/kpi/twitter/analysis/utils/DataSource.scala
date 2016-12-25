@@ -1,8 +1,9 @@
 package kpi.twitter.analysis.utils
 
 /**
-  * Continuous stream of data
-  * @tparam T type of incoming data
+  * Represents mechanism to poll data bounding
+  * requests by time and size of fetched records
+  * @tparam T type of data
   */
 trait DataSource[T] {
   def poll(timeout: Long, maxRecords: Long): Seq[T]

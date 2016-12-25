@@ -1,18 +1,32 @@
+import java.util
 import java.util.Properties
 
+import kpi.twitter.analysis.utils.TweetSerDe
 import org.apache.kafka.clients.consumer.{Consumer, KafkaConsumer}
-import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
+import twitter4j.Status
 
 package object process {
 
-  val kafkaBootstrapServers = "kafka.bootstrap.servers"
-  val kafkaTopic = "kafka.topic"
+  class TwitterStatusDeserializer extends Deserializer[Status] {
+    val stringDeserializer = new StringDeserializer()
 
-  def createKafkaConsumer(consumerProperties: Properties): Consumer[String, String] = {
-    val consumer = new KafkaConsumer[String, String](
+    override def deserialize(topic: String, data: Array[Byte]): Status = {
+      TweetSerDe.fromString(stringDeserializer.deserialize(topic, data))
+    }
+
+    override def configure(configs: util.Map[String, _], isKey: Boolean): Unit =
+      stringDeserializer.configure(configs, isKey)
+
+    override def close(): Unit =
+      stringDeserializer.close()
+  }
+
+  def createKafkaConsumer(consumerProperties: Properties): Consumer[String, Status] = {
+    val consumer = new KafkaConsumer[String, Status](
       consumerProperties,
       new StringDeserializer,
-      new StringDeserializer)
+      new TwitterStatusDeserializer)
     consumer
   }
 

@@ -1,5 +1,5 @@
-# Kafka cluster configuration
-# In future brokers will be scalable
+## Kafka cluster configuration
+## In future brokers will be scalable
 kafka-zookeeper:
   image: kafka-zookeeper
   hostname: kafka-broker
@@ -7,7 +7,7 @@ kafka-zookeeper:
     - "2181:2181"
     - "9092:9092"
   environment:
-    - ADVERTISED_HOST=kafka-broker
+    - ADVERTISED_HOST=${}
 
 # Container that runs HDFS NameNode and DataNode services
 hdfs-namenode:
@@ -70,3 +70,11 @@ spark-slave:
   # Adjust according to the resources available on host machine
   cpu_shares: 3000
   mem_limit: 2g
+
+twitter-analytics-webapp:
+  image: twitter-analytics-webapp
+  ports:
+    # UI port
+    - "6000:6000"
+  links:
+   - kafka-zookeeper

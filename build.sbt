@@ -82,3 +82,4 @@ lazy val tools = project.in(file("tools"))
     name := "TwitterAnalytics-tools",
     libraryDependencies ++= toolsDependencies
   )
+  .dependsOn(utils, consumer)

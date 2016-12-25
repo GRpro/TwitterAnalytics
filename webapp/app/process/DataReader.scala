@@ -7,14 +7,15 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import play.api.Logger
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.iteratee.Concurrent.Channel
+import twitter4j.Status
 
 class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
 
   setName("Data reader thread")
 
   // Kafka data source configuration
-  lazy val options = getOptions()
-  lazy val topic = options.getString(kafkaTopic)
+  lazy val options = getOptions("representation.conf")
+  lazy val topic = options.getString(kafkaTweetsAllTopic)
   lazy val consumerConfig = {
     val props = new java.util.Properties()
     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, options.getString(kafkaBootstrapServers))
@@ -33,7 +34,13 @@ class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
         val tweets = kafkaConsumer.poll(1000, 1000)
         Logger.info(s"Read ${tweets.length} records")
 
-        tweets.foreach(tweet => channel.push(tweet))
+        // display on map tweets with defined geolocation
+        // for other implement ML processing which is TODO
+        tweets
+          .filter(hasGeoLocation(_))
+          .foreach(status => {
+            channel.push(TweetSerDe.toString(status))
+          })
       }
 
     } catch {
@@ -41,6 +48,10 @@ class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
         Logger.error("Exception while consuming tweets", e)
         interrupt()
     }
+  }
+
+  def hasGeoLocation(status: Status): Boolean = {
+    null != status.getGeoLocation
   }
 
 }

@@ -62,31 +62,48 @@ var func = function(geo, data) {
     tip += "Spark MLlib:<font size='6em' color=" + determineColor(parseInt(data.fillKey)) + ">" + determineEmoji(parseInt(data.fillKey)) + "</font>";
     tip += "<br>Stanford CoreNLP:<font size='6em' color=" + determineColor(parseInt(data.fillKey1)) + ">" + determineEmoji(parseInt(data.fillKey1)) + "</font>";
     return "<div class='hoverinfo tooltip'>" + tip + '</div>';
+};
+
+var displayTweet = function (geo, data) {
+    var tip = "<div><h3><span style='vertical-align:middle'>@" + data.name + '</span><img style="vertical-align:middle" height="70" width="70" src="' + data.pic + '"></h3></div>';
+    tip += "<h6>" + data.date + "</h6>";
+    tip += "<h4>" + data.text + "</h4>";
+    return "<div class='hoverinfo tooltip'>" + tip + '</div>';
 }
+
 
 source.onmessage = function(event) {
 
     console.log(event.data);
-    if (event.data !== "1") {
-        data = event.data.split("¦");
-        var bubble = {
-            "id": data[0],
-            "name": data[1],
-            "text": data[2],
-            "fillKey1": data[3],
-            "fillKey": data[4],
-            "latitude": data[5],
-            "longitude": data[6],
-            "pic": data[7],
-            "date": data[8]
-        };
-
-        var bubble_array = [];
-        bubble_array.push(bubble);
-        worldmap.bubbles(bubble_array, {
-            popupTemplate: func
-        });
-    }
+    
+    status = JSON.parse(event.data)
+    
+    var bubble_array = [];
+    bubble_array.push(status);
+    worldmap.bubbles(bubble_array, {
+        popupTemplate: displayTweet
+    });
+    
+    // if (event.data !== "1") {
+    //     data = event.data.split("¦");
+    //     var bubble = {
+    //         "id": data[0],
+    //         "name": data[1],
+    //         "text": data[2],
+    //         "fillKey1": data[3],
+    //         "fillKey": data[4],
+    //         "latitude": data[5],
+    //         "longitude": data[6],
+    //         "pic": data[7],
+    //         "date": data[8]
+    //     };
+    //
+    //     var bubble_array = [];
+    //     bubble_array.push(bubble);
+    //     worldmap.bubbles(bubble_array, {
+    //         popupTemplate: func
+    //     });
+    // }
 
     //Added these placeholders for future reference
     /*d3.selectAll(".datamaps-bubble").on('click', function(bubble) {

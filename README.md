@@ -14,7 +14,7 @@ Setup environment
 -----------------
 
 1. Install [docker](https://docs.docker.com/engine/installation/)
-2. Install [docker-compose](https://docs.docker.com/compose/install/)
+2. Install latest version of [docker-compose](https://github.com/docker/compose/releases)
 3. Build docker images `./deploy/build-images.sh`. 
    This requires about 20 minutes on my environment.
 4. Run HDFS, Spark and Kafka within docker containers that were built 

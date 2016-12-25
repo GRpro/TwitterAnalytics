@@ -13,40 +13,34 @@ object dependencies {
 
   val utilsDependencies = Seq(
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
-    "com.typesafe" % "config" % configVersion
+    "com.typesafe" % "config" % configVersion,
+    "com.google.code.gson" % "gson" % "2.8.0",
+    "org.twitter4j" % "twitter4j-stream" % "4.0.4"
   )
 
   val consumerDependencies = Seq(
     // provided
-//    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
-//    ("org.apache.spark" %% "spark-streaming-twitter" % sparkVersion ) exclude ("org.spark-project.spark", "unused"),
-    ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+    ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
     ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
-//    "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
-    "com.google.code.gson" % "gson" % "2.8.0",
     // test
     "org.apache.spark" %% "spark-core" % sparkVersion % "test",
     "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion % "test",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test",
-//    "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
-    "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-    "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
+    "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
   )
 
-
-//  val otherDependencies = Seq(
-//    "com.databricks" %% "spark-csv" % sparkCsvVersion,
-//    "edu.stanford.nlp" % "stanford-corenlp" % coreNlpVersion,
-//    "edu.stanford.nlp" % "stanford-corenlp" % coreNlpVersion classifier "models",
-//    "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
-//  )
-
   val toolsDependencies = Seq(
+    /* Kafka dependencies */
     "org.apache.kafka" %% "kafka" % kafkaVersion,
     "org.apache.commons" % "commons-io" % "1.3.2",
-    "org.apache.curator" % "curator-test" % "3.2.0"
+    "org.apache.curator" % "curator-test" % "3.2.0",
+    /* Spark dependencies */
+    "org.apache.spark" %% "spark-streaming" % sparkVersion,
+    "org.apache.spark" %% "spark-core" % sparkVersion,
+    "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion,
+    "org.apache.spark" %% "spark-sql" % sparkVersion
   )
 
   val webappDependencies = Seq(

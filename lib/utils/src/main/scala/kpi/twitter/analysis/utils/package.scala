@@ -16,4 +16,42 @@ package object utils {
   def getOptions(fileName: String = "application.conf"): Config =
     ConfigFactory.load(fileName)
 
+
+
+
+
+  /*
+
+  Project specific configuration keys for all project
+  modules should be declared and explained here to
+  enhance readability
+
+  */
+
+  // Twitter OAuth credentials
+  val twitterConsumerKey = "twitter.consumerKey"
+  val twitterConsumerSecret = "twitter.consumerSecret"
+  val twitterAccessToken = "twitter.accessToken"
+  val twitterAccessTokenSecret = "twitter.accessTokenSecret"
+
+  /**
+    * The time interval at which streaming data will be divided into batches
+    */
+  val batchDurationMs = "batch.duration.ms"
+
+  /**
+    * Comma-separated list of hash-tags, e.g.
+    * @example #spark,#bigdata
+    */
+  val hashTagsFilter = "filter.hashtags"
+
+  /**
+    * Initial set of Kafka brokers to discover Kafka cluster from
+    */
+  val kafkaBootstrapServers = "kafka.bootstrap.servers"
+
+  /**
+    * Topic to store all read tweets
+    */
+  val kafkaTweetsAllTopic = "kafka.tweets.all.topic"
 }

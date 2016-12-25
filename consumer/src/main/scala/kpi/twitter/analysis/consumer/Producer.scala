@@ -20,11 +20,9 @@ class Producer[K, V](createProducer: () => KafkaProducer[K, V]) extends Serializ
 
 object Producer {
 
-  import scala.collection.JavaConversions._
-
-  def apply[K, V](config: Map[String, Object]): Producer[K, V] = {
+  def apply[K, V](createProducer: => KafkaProducer[K, V]): Producer[K, V] = {
     val createProducerFunc = () => {
-      val producer = new KafkaProducer[K, V](config)
+      val producer = createProducer
 
       sys.addShutdownHook {
         // Ensure that, on executor JVM shutdown, the Kafka producer sends
@@ -36,7 +34,5 @@ object Producer {
     }
     new Producer(createProducerFunc)
   }
-
-  def apply[K, V](config: java.util.Properties): Producer[K, V] = apply(config.toMap)
 
 }

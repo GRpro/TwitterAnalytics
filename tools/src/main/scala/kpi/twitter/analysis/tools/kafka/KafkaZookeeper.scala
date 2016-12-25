@@ -1,4 +1,4 @@
-package kafka
+package kpi.twitter.analysis.tools.kafka
 
 import java.io.File
 import java.util.{Properties, Scanner, UUID}
@@ -13,11 +13,8 @@ import kafka.utils.ZkUtils
 
 /**
   * Implementation on single-broker Kafka cluster
-  * @param port
-  * @param zkPort
-  * @param log
   */
-case class EmbeddedKafka(port: Int = 9092, zkPort: Int = 2181)(implicit val log: Logger = Logger.getLogger("kafka.EmbeddedKafka")) {
+class KafkaZookeeper(port: Int = 9092, zkPort: Int = 2181)(implicit val log: Logger = Logger.getLogger("kafka.EmbeddedKafka")) {
   private val zookeeper = new TestingServer(zkPort, false)
   private val zkUrl = zookeeper.getConnectString
   private val logDir = new File(System.getProperty("java.io.tmpdir"), s"embedded-kafka-logs/${UUID.randomUUID.toString}")
@@ -31,8 +28,8 @@ case class EmbeddedKafka(port: Int = 9092, zkPort: Int = 2181)(implicit val log:
   props.setProperty("log.dirs", logDir.getAbsolutePath)
   props.setProperty("delete.topic.enable", "true")
   props.setProperty("auto.create.topics.enable", "false")
-  props.setProperty("advertised.host.name", "192.168.1.100")
-  props.setProperty("advertised.port", "9092")
+  props.setProperty("advertised.host.name", "localhost")
+  props.setProperty("advertised.port", port.toString)
   private val kafka = new KafkaServerStartable(new KafkaConfig(props))
 
   def createTopic(topic: String, partitions: Int = 1, replicationFactor: Int = 1) = {
@@ -72,16 +69,24 @@ case class EmbeddedKafka(port: Int = 9092, zkPort: Int = 2181)(implicit val log:
   }
 }
 
-object EmbeddedKafka {
+object KafkaZookeeper {
+
+  def apply(port: Int = 9092, zkPort: Int = 2181): KafkaZookeeper = new KafkaZookeeper(port, zkPort)
+
+  /**
+    * Run KafkaZookeeper in standalone mode
+    */
   def main(args: Array[String]) {
-    val kafka = new EmbeddedKafka()
+    val kafka = new KafkaZookeeper()
     kafka.start()
 
     kafka.createTopic("unclassified-tweets", 3, 1)
+    kafka.createTopic("located-tweets", 3, 1)
+
+    val sc = new Scanner(System.in)
 
     val stopCmd = "bye"
-    val sc = new Scanner(System.in)
-    while (!"bye".equals(sc.nextLine())) {
+    while (!stopCmd.equals(sc.nextLine())) {
       println(s"use $stopCmd to stop Kafka server")
     }
 
