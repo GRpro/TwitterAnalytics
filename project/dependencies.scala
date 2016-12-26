@@ -49,4 +49,16 @@ object dependencies {
     "org.mockito" % "mockito-all" % "1.9.5" % "test",
     "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
   )
+
+  val analyzerDependencies =  Seq(
+    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
+    "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
+    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+    "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
+    "org.apache.spark" %% "spark-core" % sparkVersion % "test",
+    "org.apache.spark" %% "spark-sql" % sparkVersion % "test",
+    "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
+    "org.apache.spark" %% "spark-mllib" % sparkVersion % "test",
+    "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test"
+  )
 }

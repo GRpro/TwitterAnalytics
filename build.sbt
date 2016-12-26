@@ -62,7 +62,8 @@ lazy val analyzer = project.in(file("analyzer"))
   .settings(commonSettings: _*)
   .settings(buildInfoSettings: _*)
   .settings(
-    name := "TwitterAnalytics-analyzer"
+    name := "TwitterAnalytics-analyzer",
+    libraryDependencies := analyzerDependencies
   )
   .dependsOn(utils)
 
