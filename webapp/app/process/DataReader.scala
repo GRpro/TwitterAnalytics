@@ -31,16 +31,19 @@ class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
 
       while (!isInterrupted) {
 
-        val tweets = kafkaConsumer.poll(1000, 1000)
+        val tweets = kafkaConsumer.poll(1000, 10)
         Logger.info(s"Read ${tweets.length} records")
 
         // display on map tweets with defined geolocation
         // for other implement ML processing which is TODO
         tweets
-          .filter(hasGeoLocation(_))
+          //.filter(hasGeoLocation(_))
+            .filter(t => isTweetInEnglish(t.status))
           .foreach(status => {
             channel.push(TweetSerDe.toString(status))
           })
+
+        Thread.sleep(5000)
       }
 
     } catch {
@@ -52,6 +55,10 @@ class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
 
   def hasGeoLocation(status: Status): Boolean = {
     null != status.getGeoLocation
+  }
+
+  def isTweetInEnglish(status: Status): Boolean = {
+    status.getLang == "en" && status.getUser.getLang == "en"
   }
 
 }

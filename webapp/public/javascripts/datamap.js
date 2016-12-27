@@ -26,19 +26,10 @@ var worldmap = new Datamap({
         }
     },
     fills: {
-        defaultFill: '#E5DBD2',
+        defaultFill: '#5d91ff',
         "0": 'blue',
         "-1": 'red',
         "1": 'green'
-    }
-});
-
-worldmap.legend({
-    //legendTitle: "Sentiment",
-    labels: {
-        "1": 'Positive',
-        "0": 'Neutral',
-        "-1": 'Negative'
     }
 });
 
@@ -54,16 +45,6 @@ function determineEmoji(sentiment) {
     return sentiment == 0 ? "&#x1F44C;" : (sentiment == -1 ? "&#x1F44E;" : "&#128077;");
 }
 
-var func = function(geo, data) {
-    var url = "https://twitter.com/" + data.name + "/status/" + data.id;
-    var tip = "<div><h3><span style='vertical-align:middle'>@" + data.name + '</span><img style="vertical-align:middle" height="70" width="70" src="' + data.pic + '"></h3></div>';
-    tip += "<h6>" + data.date + "</h6>";
-    tip += "<h4>" + data.text + "</h4>";
-    tip += "Spark MLlib:<font size='6em' color=" + determineColor(parseInt(data.fillKey)) + ">" + determineEmoji(parseInt(data.fillKey)) + "</font>";
-    tip += "<br>Stanford CoreNLP:<font size='6em' color=" + determineColor(parseInt(data.fillKey1)) + ">" + determineEmoji(parseInt(data.fillKey1)) + "</font>";
-    return "<div class='hoverinfo tooltip'>" + tip + '</div>';
-};
-
 var displayTweet = function (geo, data) {
     var tip = "<div><h3><span style='vertical-align:middle'>@" + data.name + '</span><img style="vertical-align:middle" height="70" width="70" src="' + data.pic + '"></h3></div>';
     tip += "<h6>" + data.date + "</h6>";
@@ -72,53 +53,38 @@ var displayTweet = function (geo, data) {
 }
 
 
+function updateFeed(predictedStatus) {
+    var tweetLayout = "";
+    switch (predictedStatus.sentiment) {
+        case -1:
+            tweetLayout =getLayout("glyphicon-thumbs-down", "danger", predictedStatus.status.user.name, predictedStatus.status.text);
+            break;
+        case 0:
+            tweetLayout = getLayout("glyphicon-globe", "warning", predictedStatus.status.user.name, predictedStatus.status.text);
+            break;
+        case 1:
+            tweetLayout = getLayout("glyphicon-thumbs-up", "success", predictedStatus.status.user.name, predictedStatus.status.text);
+            break;
+    }
+
+    var feed = $("#feed");
+    if (feed.children().length > 4)
+        feed.children().last().remove();
+    feed.prepend(tweetLayout);
+}
+
+function getLayout(icon, sentimentStyle, username, tweet) {
+    return '<li class="list-group-item list-group-item-' + sentimentStyle + '">' +
+    "<h4>" +
+    '<span class="glyphicon ' + icon + '" aria-hidden="true" style="font-size: 20px; float:left; padding-right: 10px;"></span>' +
+    username + "</h4>" +
+    "<p>" + tweet + "</p>" +
+    "</li>";
+}
+
 source.onmessage = function(event) {
-
     console.log(event.data);
-    
-    status = JSON.parse(event.data)
-    
-    var bubble_array = [];
-    bubble_array.push(status);
-    worldmap.bubbles(bubble_array, {
-        popupTemplate: displayTweet
-    });
-    
-    // if (event.data !== "1") {
-    //     data = event.data.split("¦");
-    //     var bubble = {
-    //         "id": data[0],
-    //         "name": data[1],
-    //         "text": data[2],
-    //         "fillKey1": data[3],
-    //         "fillKey": data[4],
-    //         "latitude": data[5],
-    //         "longitude": data[6],
-    //         "pic": data[7],
-    //         "date": data[8]
-    //     };
-    //
-    //     var bubble_array = [];
-    //     bubble_array.push(bubble);
-    //     worldmap.bubbles(bubble_array, {
-    //         popupTemplate: func
-    //     });
-    // }
-
-    //Added these placeholders for future reference
-    /*d3.selectAll(".datamaps-bubble").on('click', function(bubble) {
-        console.log(bubble);
-    });
-
-    d3.selectAll('#worldmap').on('mouseout', function(info) {
-      if (d3.event.target.tagName == "circle"){
-      	console.log(d3.select(d3.event.target).data()[0],"out")
-      }
-    });
-    d3.selectAll('#worldmap').on('mouseover', function(info) {
-      if (d3.event.target.tagName == "circle"){
-      	console.log(d3.select(d3.event.target).data()[0],"over")
-      }
-    });*/
-
+    var status = JSON.parse(event.data);
+    console.log(status);
+    updateFeed(status);
 };

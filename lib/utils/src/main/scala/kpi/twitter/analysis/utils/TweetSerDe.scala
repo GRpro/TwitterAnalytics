@@ -17,4 +17,8 @@ object TweetSerDe {
   def fromString(string: String): Status = {
     TwitterObjectFactory.createStatus(string)
   }
+
+  def toString(status: PredictedStatus): String = {
+    gson.toJson(status)
+  }
 }
