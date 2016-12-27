@@ -1,4 +1,4 @@
-package kpi.twitter.analysis.consumer
+package kpi.twitter.analysis.analytics
 
 import java.util.concurrent.Future
 
@@ -19,13 +19,13 @@ import kpi.twitter.analysis.utils._
   * Spark Job that reads from public Twitter stream and publishes
   * retrieved tweets to Kafka for performing analytics
   */
-object TwitterConsumer {
+object TwitterConsumerJob {
 
   private val log = Logger.getLogger(getClass)
 
   private val appName = buildInfo("name")
   private val version = buildInfo("version")
-  private val config = getOptions("consumer.conf")
+  private val config = getOptions("job.conf")
 
 
   def createTwitterStream(streamingContext: StreamingContext, config: Config): ReceiverInputDStream[Status] = {
@@ -37,17 +37,6 @@ object TwitterConsumer {
     TwitterUtils.createStream(streamingContext, None, filters(config.getString(hashTagsFilter)))
   }
 
-  def createKafkaProducer(config: Config): KafkaProducer[String, String] = {
-    val kafkaProducerConfig = {
-      val p = new java.util.Properties()
-      p.setProperty("bootstrap.servers", config.getString(kafkaBootstrapServers))
-      p.setProperty("key.serializer", classOf[StringSerializer].getName)
-      p.setProperty("value.serializer", classOf[StringSerializer].getName)
-      p
-    }
-    new KafkaProducer[String, String](kafkaProducerConfig)
-  }
-
   def job(sparkSession: SparkSession, config: Config,
           createTwitterStream: (StreamingContext, Config) => ReceiverInputDStream[Status] = createTwitterStream,
           createKafkaProducer: (Config) => KafkaProducer[String, String] = createKafkaProducer): Unit = {
@@ -56,8 +45,8 @@ object TwitterConsumer {
 
     val tweetStream = createTwitterStream(streamingContext, config)
 
-    val kafkaProducer: Broadcast[Producer[String, String]] = sparkSession.sparkContext
-      .broadcast(Producer[String, String](createKafkaProducer(config)))
+    val kafkaProducer: Broadcast[KafkaProducerWrapper[String, String]] = sparkSession.sparkContext
+      .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(config)))
 
     val allTweetsTopic = config.getString(kafkaTweetsAllTopic)
 

@@ -18,12 +18,14 @@ object dependencies {
     "org.twitter4j" % "twitter4j-stream" % "4.0.4"
   )
 
-  val consumerDependencies = Seq(
+  val analyticsDependencies = Seq(
     // provided
+    "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+    "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
     ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
-    ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
+    ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion) exclude ("org.spark-project.spark", "unused") exclude ("org.scalatest", "scalatest"),
     // test
     "org.apache.spark" %% "spark-core" % sparkVersion % "test",
     "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion % "test",
@@ -34,13 +36,14 @@ object dependencies {
   val toolsDependencies = Seq(
     /* Kafka dependencies */
     "org.apache.kafka" %% "kafka" % kafkaVersion,
-    "org.apache.commons" % "commons-io" % "1.3.2",
+//    "org.apache.commons" % "commons-io" % "1.3.2",
     "org.apache.curator" % "curator-test" % "3.2.0",
     /* Spark dependencies */
     "org.apache.spark" %% "spark-streaming" % sparkVersion,
     "org.apache.spark" %% "spark-core" % sparkVersion,
     "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion,
-    "org.apache.spark" %% "spark-sql" % sparkVersion
+    "org.apache.spark" %% "spark-sql" % sparkVersion,
+    "org.apache.spark" %% "spark-mllib" % sparkVersion
   )
 
   val webappDependencies = Seq(

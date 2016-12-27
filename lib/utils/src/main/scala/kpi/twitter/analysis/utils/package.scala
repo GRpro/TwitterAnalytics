@@ -54,4 +54,10 @@ package object utils {
     * Topic to store all read tweets
     */
   val kafkaTweetsAllTopic = "kafka.tweets.all.topic"
+
+  val trainingPath = "training.path"
+
+  val modelPath = "model.path"
+
+  val kafkaTweetsPredictedSentimentTopic = "kafka.tweets.predicted.sentiment.topic"
 }

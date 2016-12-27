@@ -2,8 +2,9 @@ package kpi.twitter.analysis.tools
 
 import java.util.Scanner
 
+import kpi.twitter.analysis.analytics.AnalyzerJob
 import kpi.twitter.analysis.tools.kafka.KafkaZookeeper
-import kpi.twitter.analysis.tools.spark.ConsumerJob
+import kpi.twitter.analysis.tools.spark.{ConsumerJob, SparkUtil}
 import kpi.twitter.analysis.utils._
 
 /**
@@ -16,14 +17,20 @@ object Bootstrap {
   def main(args: Array[String]) {
     val kafkaPort = config.getInt(kafkaBrokerPort)
     val zookeeperPort = config.getInt(kafkaZookeeperPort)
-    val kafkaTopic = config.getString(kafkaTweetsAllTopic)
+    val allTweetsTopic = config.getString(kafkaTweetsAllTopic)
+    val analyzedTweetsTopic = config.getString(kafkaTweetsPredictedSentimentTopic)
 
-    val kafkaZookeeper = KafkaZookeeper(kafkaPort, zookeeperPort)
-    kafkaZookeeper.start()
-    kafkaZookeeper.createTopic(kafkaTopic, 3, 1)
+//    val kafkaZookeeper = KafkaZookeeper(kafkaPort, zookeeperPort)
+//    kafkaZookeeper.start()
+//    kafkaZookeeper.createTopic(allTweetsTopic, 3, 1)
+//    kafkaZookeeper.createTopic(analyzedTweetsTopic, 3, 1)
 
-    ConsumerJob(config)
+    // Twitter consumer job
+//    ConsumerJob(config)
 
+    // Twitter analytics job
+    AnalyzerJob.job(
+      SparkUtil.retrieveSparkSession("Analyzer test app"), config)
 
     val sc = new Scanner(System.in)
 
@@ -32,7 +39,7 @@ object Bootstrap {
       println(s"use $stopCmd to stop Kafka server")
     }
 
-    kafkaZookeeper.stop()
+//    kafkaZookeeper.stop()
   }
 
 }

@@ -1,10 +1,17 @@
-package kpi.twitter.analysis.consumer
+package kpi.twitter.analysis.analytics
 
 import java.util.concurrent.Future
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
-class Producer[K, V](createProducer: () => KafkaProducer[K, V]) extends Serializable {
+/**
+  * Wrapper for [[KafkaProducer]] object
+ *
+  * @param createProducer function that returns [[KafkaProducer]] instance
+  * @tparam K key type
+  * @tparam V value type
+  */
+class KafkaProducerWrapper[K, V](createProducer: () => KafkaProducer[K, V]) extends Serializable {
 
   /* This is the key idea that allows us to work around running into
      NotSerializableExceptions. */
@@ -18,9 +25,9 @@ class Producer[K, V](createProducer: () => KafkaProducer[K, V]) extends Serializ
 
 }
 
-object Producer {
+object KafkaProducerWrapper {
 
-  def apply[K, V](createProducer: => KafkaProducer[K, V]): Producer[K, V] = {
+  def apply[K, V](createProducer: => KafkaProducer[K, V]): KafkaProducerWrapper[K, V] = {
     val createProducerFunc = () => {
       val producer = createProducer
 
@@ -32,7 +39,7 @@ object Producer {
 
       producer
     }
-    new Producer(createProducerFunc)
+    new KafkaProducerWrapper(createProducerFunc)
   }
 
 }

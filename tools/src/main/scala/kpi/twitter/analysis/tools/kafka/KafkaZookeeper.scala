@@ -10,6 +10,8 @@ import org.apache.log4j.Logger
 import kafka.admin.AdminUtils
 import kafka.server.{KafkaConfig, KafkaServerStartable}
 import kafka.utils.ZkUtils
+import kpi.twitter.analysis.tools._
+import kpi.twitter.analysis.utils._
 
 /**
   * Implementation on single-broker Kafka cluster
@@ -77,11 +79,16 @@ object KafkaZookeeper {
     * Run KafkaZookeeper in standalone mode
     */
   def main(args: Array[String]) {
-    val kafka = new KafkaZookeeper()
-    kafka.start()
+    val config = getOptions("integration.conf")
+    val kafkaPort = config.getInt(kafkaBrokerPort)
+    val zookeeperPort = config.getInt(kafkaZookeeperPort)
+    val allTweetsTopic = config.getString(kafkaTweetsAllTopic)
+    val analyzedTweetsTopic = config.getString(kafkaTweetsPredictedSentimentTopic)
 
-    kafka.createTopic("unclassified-tweets", 3, 1)
-    kafka.createTopic("located-tweets", 3, 1)
+    val kafkaZookeeper = KafkaZookeeper(kafkaPort, zookeeperPort)
+    kafkaZookeeper.start()
+    kafkaZookeeper.createTopic(allTweetsTopic, 3, 1)
+    kafkaZookeeper.createTopic(analyzedTweetsTopic, 3, 1)
 
     val sc = new Scanner(System.in)
 
@@ -89,7 +96,5 @@ object KafkaZookeeper {
     while (!stopCmd.equals(sc.nextLine())) {
       println(s"use $stopCmd to stop Kafka server")
     }
-
-    kafka.stop()
   }
 }

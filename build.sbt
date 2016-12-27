@@ -39,7 +39,7 @@ lazy val TwitterAnalytics = project.in(file("."))
   .settings(
     name := "TwitterAnalytics"
   )
-  .aggregate(utils, consumer, analyzer, webapp, tools)
+  .aggregate(utils, analytics, webapp, tools)
 
 lazy val utils = project.in(file("lib/utils"))
   .settings(commonSettings: _*)
@@ -48,22 +48,14 @@ lazy val utils = project.in(file("lib/utils"))
     libraryDependencies := utilsDependencies
   )
 
-lazy val consumer = project.in(file("consumer"))
+lazy val analytics = project.in(file("analytics"))
   .settings(commonSettings: _*)
   .settings(buildInfoSettings: _*)
   .settings(
-    name := "TwitterAnalytics-consumer",
-    libraryDependencies := consumerDependencies
+    name := "TwitterAnalytics-analytics",
+    libraryDependencies := analyticsDependencies
   )
   .enablePlugins(AssemblyPlugin)
-  .dependsOn(utils)
-
-lazy val analyzer = project.in(file("analyzer"))
-  .settings(commonSettings: _*)
-  .settings(buildInfoSettings: _*)
-  .settings(
-    name := "TwitterAnalytics-analyzer"
-  )
   .dependsOn(utils)
 
 lazy val webapp = project.in(file("webapp"))
@@ -82,4 +74,4 @@ lazy val tools = project.in(file("tools"))
     name := "TwitterAnalytics-tools",
     libraryDependencies ++= toolsDependencies
   )
-  .dependsOn(utils, consumer)
+  .dependsOn(utils, analytics)

@@ -19,8 +19,9 @@ start-dfs.sh
 sleep 5
 
 # Create a tmp directory and make it accessible to everyone
-hadoop fs -mkdir -p /tmp
-hadoop fs -chmod -R 777 /tmp
+hadoop fs -mkdir -p /datasets
+hadoop fs -chmod -R 777 /datasets
+hadoop fs -put /opt/datasets/* /datasets/
 
 # Run in daemon mode, don't exit
 while true; do

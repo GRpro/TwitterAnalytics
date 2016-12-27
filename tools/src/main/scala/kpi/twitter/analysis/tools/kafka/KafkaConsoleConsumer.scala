@@ -15,7 +15,7 @@ object KafkaConsoleConsumer {
 
     val consumer = new KafkaConsumer[String, String](consumerProperties, new StringDeserializer, new StringDeserializer)
 
-    consumer.subscribe(Collections.singletonList("unclassified-tweets"))
+    consumer.subscribe(Collections.singletonList("predicted-sentiment-tweets"))
     consumer
   }
 
