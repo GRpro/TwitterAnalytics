@@ -13,6 +13,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.ml.classification.NaiveBayes
 import org.apache.spark.ml.feature.{HashingTF, Tokenizer}
+import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.functions._
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
 import org.apache.spark.streaming.kafka010.KafkaUtils
@@ -57,9 +58,25 @@ object AnalyzerJob {
       .replaceAll("(?:https?|http?)//[\\w/%.-]+", "")
   }
 
-  // persist model to HDFS
-  def saveModelToHDFS(sparkSession: SparkSession, path: String, model: PipelineModel): Unit = {
+  /**
+    * Normalize sentiment for visualization perspective.
+    * We are normalizing sentiment as we need to be consistent with the polarity value with Core NLP and for visualization.
+    *
+    * @param sentiment polarity of the tweet
+    * @return normalized to either -1, 0 or 1 based on tweet being negative, neutral and positive.
+    */
+  def normalizeMLlibSentiment(sentiment: Double) = {
+    sentiment match {
+      case x if x == 0 => -1 // negative
+      case x if x == 2 => 0 // neutral
+      case x if x == 4 => 1 // positive
+      case _ => 0 // if cant figure the sentiment, term it as neutral
+    }
+  }
+
+  def saveModelToHDFS(sparkSession: SparkSession, path: String, model: PipelineModel): PipelineModel = {
     sparkSession.sparkContext.parallelize(Seq(model), 1).saveAsObjectFile(path)
+    model
   }
 
   def loadModelFromHDFS(sparkSession: SparkSession, path: String): PipelineModel = {
@@ -90,15 +107,13 @@ object AnalyzerJob {
       log.info(s"Load training dataset from $tPath")
       val tweetsDF: DataFrame = loadSentiment140File(tPath, sparkSession)
 
-      val preprocessTweetsUdf = udf {(text: String) =>
-        getBarebonesTweetText(text)
-      }
-      val toDouble = udf[Double, String]( _.toDouble)
+      val clearTextUdf = udf {(text: String) => getBarebonesTweetText(text)}
+      val toDoubleUdf = udf[Double, String]( _.toDouble)
 
       val updatedTweetsDF = tweetsDF
         .select("polarity", "status")
-        .withColumn("status", preprocessTweetsUdf(tweetsDF("status")))
-        .withColumn("polarity", toDouble(tweetsDF("polarity")))
+        .withColumn("status", clearTextUdf(tweetsDF("status")))
+        .withColumn("polarity", toDoubleUdf(tweetsDF("polarity")))
         .withColumnRenamed("polarity", "label")
 
       val tokenizer = new Tokenizer()
@@ -108,6 +123,8 @@ object AnalyzerJob {
         .setInputCol(tokenizer.getOutputCol).setOutputCol("features")
 
       val nb = new NaiveBayes()
+      nb.setModelType("multinomial")
+      nb.setSmoothing(1.0)
 
       val pipeline = new Pipeline().setStages(Array(tokenizer, hashingTF, nb))
 
@@ -144,49 +161,42 @@ object AnalyzerJob {
     val kafkaProducer: Broadcast[KafkaProducerWrapper[String, String]] = sparkSession.sparkContext
       .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(config)))
 
-
-//    sparkSession.sqlContext.createDataFrame(kafkaStream.toDF())
-
     kafkaStream.foreachRDD { record =>
 
-//      val rdd = record.map(record => {
-//        val status = TweetSerDe.fromString(record.value())
-//        val text = getBarebonesTweetText(status.getText)
-//        Row(text, record)
-//      }).toDF()
-//
-//      sparkSession.createDataFrame(rdd, )
+      val clearedTweetsDF = record.flatMap(consumerRecord => {
+        val status = TweetSerDe.fromString(consumerRecord.value())
+        val clearedText = status.getText
 
-      record.foreachPartition { partitionOfRecords =>
-        val allTweetsMetadata: Stream[Future[RecordMetadata]] = partitionOfRecords
-          .map { record =>
+        if (isTweetInEnglish(status)) {
+          Seq((clearedText, consumerRecord.value()))
+        } else {
+          Seq()
+        }
 
-            println(s"RECORD: $record")
-            val status = TweetSerDe.fromString(record.value())
+      }).toDF("status", "tweet").cache()
 
-            if (isTweetInEnglish(status)) {
-              val tweetText = status.getText
-              val sentiment = Random.shuffle(List(-1, 0 ,1)).head //TODO Use ML
-              kafkaProducer.value.send(destTopic, sentiment.toString, TweetSerDe.toString(status))
-            } else {
-              kafkaProducer.value.send(destTopic, "0", TweetSerDe.toString(status))
-            }
+      val predictedDF = model.get.transform(clearedTweetsDF)
 
-          // produce to topic with all tweets
-        }.toStream
-        allTweetsMetadata.foreach { metadata => metadata.get() }
-      }
+      predictedDF.cache()
+      predictedDF.show(10)
+      predictedDF.select("tweet", "prediction")
+        .rdd
+        .foreachPartition(partitionOfRecords => {
+          val tweetsMetadata: Stream[Future[RecordMetadata]] = partitionOfRecords
+            .map(data => {
+            val tweetStr = data.getString(0)
+            val prediction = data.getDouble(1)
+            val normalizedSentiment = normalizeMLlibSentiment(prediction)
+            kafkaProducer.value.send(destTopic, normalizedSentiment.toString, tweetStr)
+          }).toStream
+          tweetsMetadata.foreach { metadata => metadata.get() }
+        })
     }
-
-    // use model to make sentiment analysis
-
 
     log.info("Start processing")
 
-    kafkaStream.start()
     streamingContext.start()
     streamingContext.awaitTermination()
-
   }
 
   def main(args: Array[String]) {
@@ -199,5 +209,4 @@ object AnalyzerJob {
 
     job(sparkSession, config)
   }
-
 }
