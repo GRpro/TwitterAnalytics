@@ -12,6 +12,6 @@ COPY start.sh /app/
 
 RUN chmod a+x /app/start.sh
 
-EXPOSE 6000
+EXPOSE 9000
 
 ENTRYPOINT ["/app/start.sh"]

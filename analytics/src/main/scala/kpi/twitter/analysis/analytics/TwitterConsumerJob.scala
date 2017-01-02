@@ -8,8 +8,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.streaming.twitter.TwitterUtils
 import org.apache.spark.streaming.{Milliseconds, StreamingContext}
-import org.apache.kafka.clients.producer.{KafkaProducer, RecordMetadata}
-import org.apache.kafka.common.serialization._
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.spark.streaming.dstream.ReceiverInputDStream
 import twitter4j.Status
 
@@ -39,14 +38,17 @@ object TwitterConsumerJob {
 
   def job(sparkSession: SparkSession, config: Config,
           createTwitterStream: (StreamingContext, Config) => ReceiverInputDStream[Status] = createTwitterStream,
-          createKafkaProducer: (Config) => KafkaProducer[String, String] = createKafkaProducer): Unit = {
+          kafkaProducerProperties: (Config) => java.util.Properties = kafkaProducerProperties): Unit = {
 
     val streamingContext = new StreamingContext(sparkSession.sparkContext, Milliseconds(config.getInt(batchDurationMs)))
 
     val tweetStream = createTwitterStream(streamingContext, config)
 
+    // initialize KafkaProducer properties in a Spark Driver explicitly
+    val producerProperties = kafkaProducerProperties(config)
+
     val kafkaProducer: Broadcast[KafkaProducerWrapper[String, String]] = sparkSession.sparkContext
-      .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(config)))
+      .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(producerProperties)))
 
     val allTweetsTopic = config.getString(kafkaTweetsAllTopic)
 

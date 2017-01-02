@@ -1,80 +1,104 @@
-## Kafka cluster configuration
-## In future brokers will be scalable
-#kafka-zookeeper:
-#  image: kafka-zookeeper
-#  hostname: kafka-broker
-#  ports:
-#    - "2181:2181"
-#    - "9092:9092"
-#  environment:
-#    - ADVERTISED_HOST=kafka-broker
+version: '2'
 
-# Container that runs HDFS NameNode and DataNode services
-hdfs-namenode:
-  image: hdfs-namenode
-  hostname: hdfs-namenode-host
-  ports:
-    # HDFS port
-    - "9000:9000"
-    # HDFS NameNode WebUI
-    - "50070:50070"
-  # Adjust according to the resources available on host machine
-  cpu_shares: 3000
-  mem_limit: 2g
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: "kafka"
+      KAFKA_ADVERTISED_PORT: "9092"
+      KAFKA_CREATE_TOPICS: "unclassified-tweets:3:1,predicted-sentiment-tweets:3:1,test:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#  consumer:
+#    image: wurstmeister/kafka
+#    depends_on:
+#      - kafka
+#    command: [ "sh", "-c", "sleep 10 && $$KAFKA_HOME/bin/kafka-console-consumer.sh --topic=test --zookeeper=zookeeper:2181" ]
+#  producer:
+#    image: wurstmeister/kafka
+#    depends_on:
+#      - kafka
+#    command: [ "sh", "-c", "sleep 15 && echo 'hello kafka' | $$KAFKA_HOME/bin/kafka-console-producer.sh --topic=test --broker-list=kafka:9092" ]
 
-# Container that runs HDFS DataNode service
-hdfs-datanode:
-  image: hdfs-datanode
-  hostname: hdfs-datanode-host
-  links:
-    - hdfs-namenode
-  environment:
-    # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
-    - NAMENODE_HOSTNAME=hdfs-namenode-host
-  # Adjust according to the resources available on host machine
-  cpu_shares: 3000
-  mem_limit: 2g
+#  # Kafka cluster configuration
+#  # In future brokers will be scalable
+#  kafka-zookeeper:
+#    image: kafka-zookeeper
+#    ports:
+#      - "2181:2181"
+#      - "9092:9092"
+#    environment:
+#      - ADVERTISED_HOST=kafka-zookeeper
 
-## Container that runs Spark Master and Worker services
-#spark-master:
-#  image: spark-master
-#  hostname: spark-master-host
-#  links:
-#    - hdfs-namenode
-#    - kafka-zookeeper
-#  ports:
-#    # Spark master WebUI port
-#    - "8080:8080"
-#    # Spark master job submission port
-#    - "7077:7077"
-#  environment:
-#    # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
-#    - NAMENODE_HOSTNAME=hdfs-namenode-host
-#  # Adjust according to the resources available on host machine
-#  cpu_shares: 3000
-#  mem_limit: 2g
-#
-## Container that runs Spark Worker service
-#spark-slave:
-#  image: spark-slave
-#  hostname: spark-slave-host
-#  links:
-#    - hdfs-namenode
-#    - spark-master
-#    - kafka-zookeeper
-#  environment:
-#    # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
-#    - NAMENODE_HOSTNAME=hdfs-namenode-host
-#    # MASTER_HOSTNAME is the hostname of the container running Spark master service
-#    - MASTER_HOSTNAME=spark-master-host
-#  # Adjust according to the resources available on host machine
-#  cpu_shares: 3000
-#  mem_limit: 2g
-#
-#twitter-analytics-webapp:
-#  image: twitter-analytics-webapp
-#  ports:
-#    # UI port
-#    - "6000:6000"
-#  links:
-#   - kafka-zookeeper
+  # Container that runs HDFS NameNode and DataNode services
+  hdfs-namenode:
+    image: hdfs-namenode
+    ports:
+      # HDFS port
+      - "9001:9000"
+      # HDFS NameNode WebUI
+      - "50071:50070"
+    # Adjust according to the resources available on host machine
+    cpu_shares: 3000
+    mem_limit: 2g
+
+  # Container that runs HDFS DataNode service
+  hdfs-datanode:
+    image: hdfs-datanode
+    links:
+      - hdfs-namenode
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+    # Adjust according to the resources available on host machine
+    cpu_shares: 3000
+    mem_limit: 2g
+
+  # Container that runs Spark Master and Worker services
+  spark-master:
+    image: spark-master
+    links:
+      - hdfs-namenode
+      - kafka
+    ports:
+      # Spark master WebUI port
+      - "8080:8080"
+      # Spark master job submission port
+      - "7077:7077"
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+    # Adjust according to the resources available on host machine
+    cpu_shares: 3000
+    mem_limit: 2g
+
+  # Container that runs Spark Worker service
+  spark-slave:
+    image: spark-slave
+    links:
+      - hdfs-namenode
+      - spark-master
+      - kafka
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+      # MASTER_HOSTNAME is the hostname of the container running Spark master service
+      - MASTER_HOSTNAME=spark-master
+    # Adjust according to the resources available on host machine
+    cpu_shares: 3000
+    mem_limit: 2g
+
+  twitter-analytics-webapp:
+    image: twitter-analytics-webapp
+    ports:
+      # UI port
+      - "9000:9000"
+    links:
+     - kafka

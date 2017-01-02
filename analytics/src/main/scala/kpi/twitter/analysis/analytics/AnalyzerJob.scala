@@ -158,8 +158,11 @@ object AnalyzerJob {
       Subscribe[String, String](srcTopic, kafkaParams)
     )
 
+    // initialize KafkaProducer properties in a Spark Driver explicitly
+    val producerProperties = kafkaProducerProperties(config)
+
     val kafkaProducer: Broadcast[KafkaProducerWrapper[String, String]] = sparkSession.sparkContext
-      .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(config)))
+      .broadcast(KafkaProducerWrapper[String, String](createKafkaProducer(producerProperties)))
 
     kafkaStream.foreachRDD { record =>
 

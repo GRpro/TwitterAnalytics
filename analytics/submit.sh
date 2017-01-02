@@ -15,6 +15,7 @@ case "$1" in
     *)
         # unknown option
         echo "Unknown job. Please use -ml|--ml-analyzer or -ml|--ml-predictor"
+        exit 1
     ;;
 esac
 
@@ -47,6 +48,6 @@ docker cp $ANALYTICS_JAR $SPARK_MASTER_CONTAINER:$JAR_PATH
 
 # submit application
 docker exec $SPARK_MASTER_CONTAINER bash -x -c "\$SPARK_HOME/bin/spark-submit \
-  --class kpi.twitter.analysis.analytics.TwitterConsumer \
+  --class $RUN_CLASS \
   --master spark://spark-master:7077 \
   $JAR_PATH"

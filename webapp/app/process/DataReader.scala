@@ -14,8 +14,8 @@ class DataReader(var channel: Concurrent.Channel[String]) extends Thread {
   setName("Data reader thread")
 
   // Kafka data source configuration
-  lazy val options = getOptions("representation.conf")
-  lazy val topic = options.getString(kafkaTweetsAllTopic)
+  lazy val options = getOptions("environment.conf")
+  lazy val topic = options.getString(kafkaTweetsPredictedSentimentTopic)
   lazy val consumerConfig = {
     val props = new java.util.Properties()
     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, options.getString(kafkaBootstrapServers))
