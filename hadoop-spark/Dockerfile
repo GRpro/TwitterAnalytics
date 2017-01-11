@@ -41,7 +41,6 @@ ENV HADOOP_MINOR_VERSION 3
 ENV HADOOP_VERSION ${HADOOP_MAJOR_VERSION}.${HADOOP_MINOR_VERSION}
 ENV SPARK_VERSION 2.0.2
 
-#TODO comment
 ENV HADOOP_VERSION ${HADOOP_MAJOR_VERSION}.${HADOOP_MINOR_VERSION}
 
 # Download Hadoop package
@@ -77,6 +76,11 @@ ENV SPARK_HOME /opt/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_MAJOR_VERSION}
 ENV PATH $PATH:${HADOOP_HOME}/sbin/:${HADOOP_HOME}/bin:${SPARK_HOME}/sbin/:${SPARK_HOME}/bin
 
 RUN ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+
+# copy bootstrap scripts
+COPY scripts /usr/bin/.
+
+RUN chmod -R a+x /usr/bin/*
 
 # Spark ports
 EXPOSE 7077 6066 8080 8081

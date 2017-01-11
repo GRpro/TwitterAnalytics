@@ -80,7 +80,7 @@ object TwitterConsumerJob {
     log.info(s"Configuration: $config")
 
     val sparkSession = SparkSession.builder
-      .appName(s"$appName-$version")
+      .appName(s"$appName-twitter-consumer-$version")
       .getOrCreate()
 
     job(sparkSession, config)

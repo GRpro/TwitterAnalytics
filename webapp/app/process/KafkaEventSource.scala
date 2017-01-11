@@ -2,22 +2,23 @@ package process
 
 import java.util.{Collections, Properties}
 
-import kpi.twitter.analysis.utils.{DataSource, PredictedStatus}
+import kpi.twitter.analysis.utils.{DataSource, PredictedStatus, SentimentLabel, TweetSerDe}
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.common.serialization.StringDeserializer
 import twitter4j.Status
+
 import scala.util.Random;
 
 
 /**
   * Kafka consumer that reads tweets from a specific topic
   */
-class KafkaEventSource(createConsumer: => Consumer[String, Status], val topic: String, val time: Time) extends DataSource[PredictedStatus] {
+class KafkaEventSource(createConsumer: => Consumer[String, String], val topic: String, val time: Time) extends DataSource[PredictedStatus] {
   private val kafkaConsumer = createConsumer
 
   kafkaConsumer.subscribe(Collections.singletonList(topic))
 
-  private var recordsIterator: Option[java.util.Iterator[ConsumerRecord[String, Status]]] = None
+  private var recordsIterator: Option[java.util.Iterator[ConsumerRecord[String, String]]] = None
 
   override def poll(timeout: Long, maxRecords: Long): Seq[PredictedStatus] = {
     val endTime = time.currentMillis + timeout
@@ -37,7 +38,11 @@ class KafkaEventSource(createConsumer: => Consumer[String, Status], val topic: S
       }
 
       while (recordsIterator.get.hasNext && readSize < maxRecords) {
-        result = result :+ PredictedStatus(Random.shuffle(List(-1, 0, 1)).head, recordsIterator.get.next().value())
+        val record = recordsIterator.get.next()
+        val sentimentLabel = SentimentLabel.deserialize(record.key())
+        val status = TweetSerDe.fromString(record.value())
+
+        result = result :+ PredictedStatus(sentimentLabel.sentiment, sentimentLabel.probability, status)
         readSize += 1
       }
     }
@@ -47,6 +52,13 @@ class KafkaEventSource(createConsumer: => Consumer[String, Status], val topic: S
 
 object KafkaEventSource {
 
+  private def createKafkaConsumer(consumerProperties: Properties): Consumer[String, String] = {
+    val consumer = new KafkaConsumer[String, String](
+      consumerProperties,
+      new StringDeserializer,
+      new StringDeserializer)
+    consumer
+  }
   def apply(consumerProperties: Properties, topic: String): KafkaEventSource =
     new KafkaEventSource(createKafkaConsumer(consumerProperties), topic, Time.default)
 

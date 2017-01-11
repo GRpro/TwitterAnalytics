@@ -22,11 +22,7 @@ val buildInfoSettings = Seq(
 val commonSettings = Seq(
   organization := "kpi.twitter.analysis",
   version := s"${Process("git describe --tags").lines.head}",
-  scalaVersion := "2.11.8",
-  assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", xs@_*) => MergeStrategy.discard
-    case x => (assemblyMergeStrategy in assembly).value(x)
-  }
+  scalaVersion := "2.11.8"
 )
 
 /*
@@ -45,7 +41,7 @@ lazy val utils = project.in(file("lib/utils"))
   .settings(commonSettings: _*)
   .settings(
     name := "TwitterAnalytics-utils",
-    libraryDependencies := utilsDependencies
+    libraryDependencies ++= utilsDependencies
   )
 
 lazy val analytics = project.in(file("analytics"))
@@ -53,7 +49,12 @@ lazy val analytics = project.in(file("analytics"))
   .settings(buildInfoSettings: _*)
   .settings(
     name := "TwitterAnalytics-analytics",
-    libraryDependencies := analyticsDependencies
+    libraryDependencies ++= analyticsDependencies,
+    assemblyMergeStrategy in assembly := {
+      case PathList("META-INF", xs@_*) => MergeStrategy.discard
+      case x => (assemblyMergeStrategy in assembly).value(x)
+    },
+    assemblyOutputPath in assembly := file(target.value + "/applications/application.jar")
   )
   .enablePlugins(AssemblyPlugin)
   .dependsOn(utils)

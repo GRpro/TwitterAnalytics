@@ -168,7 +168,7 @@ object AnalyzerJob {
 
       val clearedTweetsDF = record.flatMap(consumerRecord => {
         val status = TweetSerDe.fromString(consumerRecord.value())
-        val clearedText = status.getText
+        val clearedText = getBarebonesTweetText(status.getText)
 
         if (isTweetInEnglish(status)) {
           Seq((clearedText, consumerRecord.value()))
@@ -182,16 +182,21 @@ object AnalyzerJob {
 
       predictedDF.cache()
       predictedDF.show(10)
-      predictedDF.select("tweet", "prediction")
+      predictedDF.select("tweet", "prediction", "probability")
         .rdd
         .foreachPartition(partitionOfRecords => {
           val tweetsMetadata: Stream[Future[RecordMetadata]] = partitionOfRecords
             .map(data => {
-            val tweetStr = data.getString(0)
-            val prediction = data.getDouble(1)
-            val normalizedSentiment = normalizeMLlibSentiment(prediction)
-            kafkaProducer.value.send(destTopic, normalizedSentiment.toString, tweetStr)
-          }).toStream
+              val tweetStr = data.getString(0)
+              val prediction = data.getDouble(1)
+              val probability = 0.5 //data.getDouble(2) //TODO
+              val normalizedPrediction = normalizeMLlibSentiment(prediction)
+              // Use SentimentLabel as a key
+              // Use Status as a label
+              val key = SentimentLabel.serialize(new SentimentLabel(normalizedPrediction, probability))
+              val value = tweetStr
+              kafkaProducer.value.send(destTopic, key, value)
+            }).toStream
           tweetsMetadata.foreach { metadata => metadata.get() }
         })
     }
@@ -207,7 +212,7 @@ object AnalyzerJob {
     log.info(s"Configuration: $config")
 
     val sparkSession = SparkSession.builder
-      .appName(s"$appName-$version")
+      .appName(s"$appName-sentiment-analyzer-$version")
       .getOrCreate()
 
     job(sparkSession, config)

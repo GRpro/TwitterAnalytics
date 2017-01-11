@@ -3,7 +3,7 @@ Twitter analytics project
 
 Description
 -----------
-This should be a great example of twitter analytics application on top of Spark and Kafka.
+Twitter analytics application on top of Spark and Kafka.
 Currently there is an implementation of consuming part.
 
 Twitter Stream ------> Spark Streaming Job ------> Apache Kafka
@@ -38,3 +38,43 @@ Build project and run
 5. Attach to kafka-zookeeper container `docker exec -it deploy_kafka-zookeeper_1 /bin/bash` 
    (See [project deployment](deploy/README.md) for more details) and start console 
    consumer to see incoming tweets `${KAFKA_HOME}/kafka-console-consumer.sh --topic unclassified-tweets --new-consumer --bootstrap-server localhost:9092`
+
+Compose deployment
+------------------
+
+# Docker compose for spawning on demand HDFS and Spark clusters
+
+# Build the required Docker images
+`./build-images.sh`
+
+# Run the cluster
+Note: Run below commands from the directory where `docker-compose.yml` file is present.
+## bring up the cluster
+`docker-compose up -d`
+## stop the cluster
+`docker-compose stop`
+## restart the stopped cluster
+`docker-compose start`
+## remove containers
+`docker-compose rm -f`
+## to scale HDFS datanode or Spark worker containers
+`docker-compose scale spark-slave=n` where n is the new number of containers.
+
+## Attaching to cluster containers
+  - HDFS NameNode container
+    * Runs HDFS NameNode and DataNode services
+    * `docker exec -it deploy_hdfs-namenode_1 /bin/bash`
+  - HDFS DataNode container(s)
+    * Runs HDFS DataNode service
+    * There could be multiple instances of this container. To connect to n'th container
+      * `docker exec -it deploy_hdfs-datanode__n_ /bin/bash`
+  - Spark Master container
+    * Runs Spark Master and Worker services
+    * `docker exec -it deploy_spark-master_1 /bin/bash`
+  - Spark Worker container
+    * Runs Spark Worker service
+    * There could be multiple instances of this container. To connect to n'th container
+      * `docker exec -it deploy_spark-slave__n_ /bin/bash`
+  - Kafka Zookeeper container
+    * Runs Zookeeper and Kafka Broker
+      * `docker exec -it deploy_kafka-zookeeper_1 /bin/bash`

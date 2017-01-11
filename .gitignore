@@ -3,5 +3,4 @@ target/
 out/
 *.iml
 
-spark_cluster/conf
-spark_cluster/data
+shared/datasets

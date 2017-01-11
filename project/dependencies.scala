@@ -12,7 +12,7 @@ object dependencies {
   val kafkaVersion = "0.10.1.0"
 
   val utilsDependencies = Seq(
-    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+//    "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
     "com.typesafe" % "config" % configVersion,
     "com.google.code.gson" % "gson" % "2.8.0",
     "org.twitter4j" % "twitter4j-stream" % "4.0.4"
@@ -24,8 +24,11 @@ object dependencies {
     "org.apache.spark" %% "spark-streaming" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
     "org.apache.spark" %% "spark-mllib" % sparkVersion % "provided",
-    ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion) exclude ("org.spark-project.spark", "unused"),
-    ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion) exclude ("org.spark-project.spark", "unused") exclude ("org.scalatest", "scalatest"),
+    ("org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion)
+      exclude ("org.spark-project.spark", "unused"),
+    ("org.apache.spark" %% "spark-streaming-kafka-0-10" % sparkVersion)
+      exclude ("org.spark-project.spark", "unused")
+      exclude ("org.scalatest", "scalatest"),
     // test
     "org.apache.spark" %% "spark-core" % sparkVersion % "test",
     "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion % "test",
@@ -41,7 +44,7 @@ object dependencies {
     /* Spark dependencies */
     "org.apache.spark" %% "spark-streaming" % sparkVersion,
     "org.apache.spark" %% "spark-core" % sparkVersion,
-    "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion,
+//    "org.apache.bahir" %% "spark-streaming-twitter" % sparkVersion,
     "org.apache.spark" %% "spark-sql" % sparkVersion,
     "org.apache.spark" %% "spark-mllib" % sparkVersion
   )

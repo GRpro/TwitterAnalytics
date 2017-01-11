@@ -1,0 +1,132 @@
+version: '2.0'
+
+services:
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: "kafka"
+      KAFKA_ADVERTISED_PORT: "9092"
+      KAFKA_CREATE_TOPICS: "unclassified-tweets:3:1,predicted-sentiment-tweets:3:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+  twitter-analytics-webapp:
+    image: twitter-analytics-webapp:${TAG}
+    build: ./webapp
+    ports:
+      # UI port
+      - "9000:9000"
+    links:
+      - kafka
+    command: "/app/twitteranalytics-webapp/bin/twitteranalytics-webapp"
+
+  # Container that runs HDFS NameNode and DataNode services
+  hdfs-namenode:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    ports:
+      # HDFS port
+      - "9001:9000"
+      # HDFS NameNode WebUI
+      - "50071:50070"
+    command: "/usr/bin/bootstrap_hdfs_namenode.sh"
+    # Adjust according to the resources available on host machine
+    cpu_shares: 4
+    mem_limit: 2g
+
+  # Container that runs HDFS DataNode service
+  hdfs-datanode:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    links:
+      - hdfs-namenode
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+    command: "/usr/bin/bootstrap_hdfs_datanode.sh"
+    # Adjust according to the resources available on host machine
+    cpu_shares: 4
+    mem_limit: 2g
+
+  # Container that runs Spark Master and Worker services
+  spark-master:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    links:
+      - hdfs-namenode
+      - kafka
+    ports:
+      # Spark master WebUI port
+      - "8080:8080"
+      # Spark master job submission port
+      - "7077:7077"
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+    command: "/usr/bin/bootstrap_spark_master.sh"
+    # Adjust according to the resources available on host machine
+    cpu_shares: 4
+    mem_limit: 2g
+
+  # Container that runs Spark Worker service
+  spark-slave:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    links:
+      - hdfs-namenode
+      - spark-master
+      - kafka
+    environment:
+      # NAMENODE_HOSTNAME is the hostname of the container running Namenode service
+      - NAMENODE_HOSTNAME=hdfs-namenode
+      # MASTER_HOSTNAME is the hostname of the container running Spark master service
+      - MASTER_HOSTNAME=spark-master
+    command: "/usr/bin/bootstrap_spark_slave.sh"
+    # Adjust according to the resources available on host machine
+    cpu_shares: 4
+    mem_limit: 2g
+
+  spark-twitter-consumer-application:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    container_name: spark-twitter-consumer-app
+    links:
+      - hdfs-namenode
+      - spark-master
+    volumes:
+      - ./analytics/target/applications:/opt/applications
+    command: "/opt/spark-2.0.2-bin-hadoop2.7/bin/spark-submit \
+               --class kpi.twitter.analysis.analytics.TwitterConsumerJob \
+               --master spark://spark-master:7077 \
+               --executor-memory 512M \
+               --total-executor-cores 2 \
+               /opt/applications/application.jar"
+
+  spark-analytics-application:
+    image: hadoop-spark:${TAG}
+    build: ./hadoop-spark
+    container_name: spark-analytics-app
+    links:
+      - hdfs-namenode
+      - spark-master
+    volumes:
+      - ./analytics/target/applications:/opt/applications
+      - ./shared:/opt/shared
+    # Wait for HDFS to start and upload training datasets. Run Spark application.
+    command: "bash -c '
+
+              /opt/shared/datasets.sh ;
+              /opt/spark-2.0.2-bin-hadoop2.7/bin/spark-submit \
+               --class kpi.twitter.analysis.analytics.AnalyzerJob \
+               --master spark://spark-master:7077 \
+               --executor-memory 512M \
+               --total-executor-cores 2 \
+               /opt/applications/application.jar'"

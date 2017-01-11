@@ -14,7 +14,7 @@ case "$1" in
     ;;
     *)
         # unknown option
-        echo "Unknown job. Please use -ml|--ml-analyzer or -ml|--ml-predictor"
+        echo "Unknown job. Please use -c|--twitter-consumer or -ml|--ml-analyzer"
         exit 1
     ;;
 esac
@@ -23,7 +23,7 @@ esac
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ -z $ANALYTICS_JAR ]; then
-    ANALYTICS_JAR=$( ls $DIR/target/scala-2.11/TwitterAnalytics-analytics-assembly* )
+    ANALYTICS_JAR=$( ls $DIR/analytics/target/scala-2.11/TwitterAnalytics-analytics-assembly* )
 fi
 
 if [ ! -f $ANALYTICS_JAR ]; then
@@ -50,4 +50,6 @@ docker cp $ANALYTICS_JAR $SPARK_MASTER_CONTAINER:$JAR_PATH
 docker exec $SPARK_MASTER_CONTAINER bash -x -c "\$SPARK_HOME/bin/spark-submit \
   --class $RUN_CLASS \
   --master spark://spark-master:7077 \
+  --executor-memory 512M \
+  --total-executor-cores 2 \
   $JAR_PATH"

@@ -15,14 +15,6 @@ hdfs namenode -format -force
 # Start HDFS services
 start-dfs.sh
 
-# Wait for HDFS services to be up and running
-sleep 5
-
-# Create a tmp directory and make it accessible to everyone
-hadoop fs -mkdir -p /datasets
-hadoop fs -chmod -R 777 /datasets
-hadoop fs -put /opt/datasets/* /datasets/
-
 # Run in daemon mode, don't exit
 while true; do
   sleep 100;
