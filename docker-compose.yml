@@ -4,8 +4,12 @@ services:
 
   zookeeper:
     image: wurstmeister/zookeeper
+    container_name: ${COMPOSE_PROJECT_NAME}_zookeeper
     ports:
       - "2181:2181"
+    networks:
+      - docker_analytics
+
   kafka:
     image: wurstmeister/kafka
     depends_on:
@@ -17,20 +21,13 @@ services:
       KAFKA_ADVERTISED_PORT: "9092"
       KAFKA_CREATE_TOPICS: "unclassified-tweets:3:1,predicted-sentiment-tweets:3:1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-  twitter-analytics-webapp:
-    image: twitter-analytics-webapp:${TAG}
-    build: ./webapp
-    ports:
-      # UI port
-      - "9000:9000"
-    links:
-      - kafka
-    command: "/app/twitteranalytics-webapp/bin/twitteranalytics-webapp"
+    networks:
+      - docker_analytics
 
   # Container that runs HDFS NameNode and DataNode services
   hdfs-namenode:
     image: hadoop-spark:${TAG}
+    container_name: ${COMPOSE_PROJECT_NAME}_hdfs-namenode
     build: ./hadoop-spark
     ports:
       # HDFS port
@@ -41,6 +38,8 @@ services:
     # Adjust according to the resources available on host machine
     cpu_shares: 4
     mem_limit: 2g
+    networks:
+      - docker_analytics
 
   # Container that runs HDFS DataNode service
   hdfs-datanode:
@@ -55,10 +54,13 @@ services:
     # Adjust according to the resources available on host machine
     cpu_shares: 4
     mem_limit: 2g
+    networks:
+      - docker_analytics
 
   # Container that runs Spark Master and Worker services
   spark-master:
     image: hadoop-spark:${TAG}
+    container_name: ${COMPOSE_PROJECT_NAME}_spark-master
     build: ./hadoop-spark
     links:
       - hdfs-namenode
@@ -75,6 +77,8 @@ services:
     # Adjust according to the resources available on host machine
     cpu_shares: 4
     mem_limit: 2g
+    networks:
+      - docker_analytics
 
   # Container that runs Spark Worker service
   spark-slave:
@@ -93,13 +97,27 @@ services:
     # Adjust according to the resources available on host machine
     cpu_shares: 4
     mem_limit: 2g
+    networks:
+      - docker_analytics
 
-  spark-twitter-consumer-application:
+  webapp:
+    image: twitter-analytics-webapp:${TAG}
+    container_name: ${COMPOSE_PROJECT_NAME}_webapp
+    build: ./webapp
+    ports:
+      # UI port
+      - "9000:9000"
+    links:
+      - kafka
+    command: "/app/twitteranalytics-webapp/bin/twitteranalytics-webapp"
+    networks:
+      - docker_analytics
+
+  spark-twitter-consumer-app:
     image: hadoop-spark:${TAG}
     build: ./hadoop-spark
     container_name: spark-twitter-consumer-app
     links:
-      - hdfs-namenode
       - spark-master
     volumes:
       - ./analytics/target/applications:/opt/applications
@@ -109,20 +127,20 @@ services:
                --executor-memory 512M \
                --total-executor-cores 2 \
                /opt/applications/application.jar"
+    networks:
+      - docker_analytics
 
-  spark-analytics-application:
+  spark-analytics-app:
     image: hadoop-spark:${TAG}
     build: ./hadoop-spark
     container_name: spark-analytics-app
     links:
-      - hdfs-namenode
       - spark-master
     volumes:
       - ./analytics/target/applications:/opt/applications
       - ./shared:/opt/shared
-    # Wait for HDFS to start and upload training datasets. Run Spark application.
+    # Prepare training datasets. Run Spark application.
     command: "bash -c '
-
               /opt/shared/datasets.sh ;
               /opt/spark-2.0.2-bin-hadoop2.7/bin/spark-submit \
                --class kpi.twitter.analysis.analytics.AnalyzerJob \
@@ -130,3 +148,14 @@ services:
                --executor-memory 512M \
                --total-executor-cores 2 \
                /opt/applications/application.jar'"
+    networks:
+      - docker_analytics
+
+networks:
+  docker_analytics:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
+        gateway: 172.16.238.1
