@@ -3,6 +3,7 @@ package process
 import java.util
 import java.util.Collections
 
+import kpi.twitter.analysis.utils.{PredictedStatus, SentimentLabel, TweetSerDe}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer}
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.FunSuite
@@ -18,7 +19,7 @@ class KafkaEventSourceTest extends FunSuite with MockitoSugar {
 
   test("subscribe should be invoked once for correct topic") {
     val topicName = "fake"
-    val mockConsumer = mock[KafkaConsumer[String, Status]]
+    val mockConsumer = mock[KafkaConsumer[SentimentLabel, Status]]
     val mockTime = new MockTime
 
     val kafkaEventSource = new KafkaEventSource(mockConsumer, topicName, mockTime)
@@ -31,14 +32,14 @@ class KafkaEventSourceTest extends FunSuite with MockitoSugar {
   test("poll should return on timeout") {
 
     val topicName = "fake"
-    val mockConsumer = mock[KafkaConsumer[String, Status]]
+    val mockConsumer = mock[KafkaConsumer[SentimentLabel, Status]]
     val mockTime = new MockTime
 
-    when(mockConsumer.poll(1000)).thenAnswer(new Answer[ConsumerRecords[String, Status]]() {
-      override def answer(invocation: InvocationOnMock): ConsumerRecords[String, Status] = {
+    when(mockConsumer.poll(1000)).thenAnswer(new Answer[ConsumerRecords[SentimentLabel, Status]]() {
+      override def answer(invocation: InvocationOnMock): ConsumerRecords[SentimentLabel, Status] = {
         val args = invocation.getArguments
         mockTime.sleep(args(0).asInstanceOf[Long])
-        ConsumerRecords.empty[String, Status]()
+        ConsumerRecords.empty[SentimentLabel, Status]()
       }
     })
 
@@ -56,19 +57,19 @@ class KafkaEventSourceTest extends FunSuite with MockitoSugar {
   test("poll should return on max records") {
 
     val topicName = "fake"
-    val mockConsumer = mock[KafkaConsumer[String, Status]]
+    val mockConsumer = mock[KafkaConsumer[SentimentLabel, Status]]
     val mockTime = new MockTime
 
-    when(mockConsumer.poll(1000)).thenAnswer(new Answer[ConsumerRecords[String, Status]]() {
-      override def answer(invocation: InvocationOnMock): ConsumerRecords[String, Status] = {
+    when(mockConsumer.poll(1000)).thenAnswer(new Answer[ConsumerRecords[SentimentLabel, Status]]() {
+      override def answer(invocation: InvocationOnMock): ConsumerRecords[SentimentLabel, Status] = {
         mockTime.sleep(1)
         val tp = new TopicPartition(topicName, 1)
-        val record = new ConsumerRecord[String, Status](topicName, 0, 0, "key", mock[Status])
-        val recordsMap = new util.HashMap[TopicPartition, util.List[ConsumerRecord[String, Status]]]()
-        val recordsList = new util.ArrayList[ConsumerRecord[String, Status]]()
+        val record = new ConsumerRecord[SentimentLabel, Status](topicName, 0, 0, mock[SentimentLabel], mock[Status])
+        val recordsMap = new util.HashMap[TopicPartition, util.List[ConsumerRecord[SentimentLabel, Status]]]()
+        val recordsList = new util.ArrayList[ConsumerRecord[SentimentLabel, Status]]()
         recordsList.add(record)
         recordsMap.put(tp, recordsList)
-        new ConsumerRecords[String, Status](recordsMap)
+        new ConsumerRecords[SentimentLabel, Status](recordsMap)
 
       }
     })
